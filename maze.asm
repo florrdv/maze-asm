@@ -3,7 +3,7 @@ file: .asciiz "maze.txt"
 buffer: .space 1024 
 
 # Maze info
-width: .word
+width: .word 0
 
 # Colors
 blue: .word 0xff4083f0
@@ -239,10 +239,44 @@ update_position:
 	move $s3, $a3
 	
 	# Lets store the current player position memory address in $s4
+	move $a0, $s0
+	move $a1, $s1
+	jal convert
 	
+	move $s4, $v0
 	
 	# Lets store the new player position memory address in $s1
+	move $a2, $s2
+	move $a3, $s3
+	jal convert
 	
+	move $s5, $v0
+	
+	# s4 now contains our previous player position and s5 has our new position
+	# Lets make sure the position in s5 is valid to move to
+	lw $t0, black
+	lw $t1, $s5
+	
+	bne $t1, $s5, invalid_position
+	
+	# Valid position
+	valid_position:
+	lw $t2, yellow # Load yellow
+	sw $t2, $s5
+	sw $t0, $s4
+	
+	move $v0, $s2
+	move $v1, $s3	
+	
+	j end_position_update
+	# Invalid position detected
+	invalid_position:
+	move $v0, $s0
+	move $v1, $s1
+	j end_position_update
+	
+	# Cleanup
+	end_position_update:
 	lw	$s5, -16($fp)	# reset saved register $s5
 	lw	$s4, -16($fp)	# reset saved register $s4
 	lw	$s3, -16($fp)	# reset saved register $s3
