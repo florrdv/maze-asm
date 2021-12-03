@@ -2,6 +2,10 @@
 file: .asciiz "maze.txt"
 buffer: .space 1024 
 
+# Maze info
+width: .word
+
+# Colors
 blue: .word 0xff4083f0
 black: .word 0xff000000
 yellow: .word 0xfffbff00
@@ -64,7 +68,7 @@ load_file:
 parse_file:
 	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 20	# allocate 12 bytes on the stack
+	subu	$sp, $sp, 20	# allocate 20 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
 	sw	$s0, -8($fp)	# save locally used registers
 	sw	$s1, -12($fp)	# save locally used registers	
@@ -93,6 +97,8 @@ parse_file:
 	
 	after_width:
 	move $s2, $s0
+	sw $s2, width
+	
 	move $s0, $zero
 	move $s1, $zero
 	
@@ -114,7 +120,6 @@ parse_file:
 	# using the convert function we defined earlier
 	move $a0, $s0
 	move $a1, $s1
-	move $a2, $s2
 	jal convert
 	
 	# Save the memory address while we determine the color
@@ -180,12 +185,15 @@ convert:
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
 	subu	$sp, $sp, 8	# allocate 12 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
+	
 	# X coordinate in a0
 	# Y coordinate in a1
-	# Width in a2
 	
-	# Multiply by row width * 4
-	mul $t0, $a1, $a2
+	# Load width
+	lw $t0, width
+	
+	# Multiply by row width * row
+	mul $t0, $a1, $t0
 	
 	add $t0, $t0, $a0
 	sll $t0, $t0, 2
@@ -201,5 +209,47 @@ convert:
 # Player movement
 ##################
 ########################################################################
-#PROCEDURE load the file data
-load_file:
+# PROCEDURE load the file data
+# Write a function (with stackframe!) that has four arguments (current player row,
+# current player column, new player row, new player column) that updates the position
+# of the player in the displayed maze and returns its (possibly new) current position
+# using registers $v0 and $v1. Make sure the update is only executed when the given
+# move is a valid move within the maze. In order to calculate the memory address for a
+# particular location use the function (with stackframe!) from the previous assignment
+# to convert logical coordinates to memory addresses.
+update_position:
+	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
+	move	$fp, $sp	# frame	pointer now points to the top of the stack
+	subu	$sp, $sp, 32	# allocate 20 bytes on the stack
+	sw	$ra, -4($fp)	# store the value of the return address
+	sw	$s0, -8($fp)	# save locally used registers
+	sw	$s1, -12($fp)	# save locally used registers	
+	sw	$s2, -16($fp)	# save locally used registers
+	sw	$s3, -20($fp)	# save locally used registers
+	sw	$s4, -24($fp)	# save locally used registers
+	sw	$s5, -28($fp)	# save locally used registers
+	
+	# a0 contains the current player row
+	# a1 contains the current player column
+	# a0 contains the new plaeyr row
+	# a1 contains the new player column
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	# Lets store the current player position memory address in $s4
+	
+	
+	# Lets store the new player position memory address in $s1
+	
+	lw	$s5, -16($fp)	# reset saved register $s5
+	lw	$s4, -16($fp)	# reset saved register $s4
+	lw	$s3, -16($fp)	# reset saved register $s3
+	lw	$s2, -16($fp)	# reset saved register $s2	
+	lw	$s1, -12($fp)	# reset saved register $s1	
+	lw	$s0, -8($fp)	# reset saved register $s0
+	lw	$ra, -4($fp)    # get return address from frame
+	move	$sp, $fp        # get old frame pointer from current fra
+	lw	$fp, ($sp)	# restore old frame pointer
+	jr	$ra
