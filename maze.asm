@@ -20,6 +20,9 @@ exit:
 	li   $v0, 10 		# system call for exit
 	syscall      		# exit (back to operating system)
 	
+###################
+# MAP LOADING
+##################
 ########################################################################
 #PROCEDURE load the file data
 load_file:
@@ -194,3 +197,9 @@ convert:
 	lw	$fp, ($sp)	# restore old frame pointer
 	jr	$ra
 	
+###################
+# Player movement
+##################
+########################################################################
+#PROCEDURE load the file data
+load_file:
