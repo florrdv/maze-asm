@@ -5,8 +5,10 @@
 ########################################
 
 .data
+# General
 file: .asciiz "maze.txt"
-buffer: .space 1024 
+buffer: .space 1024
+victory_message: .asciiz "Congratulations, you won!"
 
 # Maze info
 width: .word 0
@@ -20,7 +22,6 @@ yellow: .word 0xfffbff00
 green: .word 0xff0afe01
 red: .word 0xffff0000
 white: .word 0xffffffff
-
 
 .globl main
 .text
@@ -40,9 +41,6 @@ game_loop:
 	
 	# Jump back to the start of the loop
 	j game_loop
-exit:
-	li   $v0, 10 		# system call for exit
-	syscall      		# exit (back to operating system)
 	
 ###################
 # MAP LOADING
@@ -277,9 +275,14 @@ update_position:
 	move $s5, $v0
 	
 	# s4 now contains our previous player position and s5 has our new position
+	# Lets check if the player has won
+	lw $t0, green
+	lw $t1, ($s5)
+	beq $t1, $t0, victory
+	
+	
 	# Lets make sure the position in s5 is valid to move to
 	lw $t0, black
-	lw $t1, ($s5)
 	
 	bne $t1, $t0, invalid_position
 	
@@ -343,7 +346,6 @@ handle_input:
 	beq $t0, 115, down
 	beq $t0, 97, left
 	beq $t0, 100, right
-	beq $t0, 120, exit
 	
 	up:
 	subi $s1, $s1, 1
@@ -370,3 +372,26 @@ handle_input:
 	move	$sp, $fp        # get old frame pointer from current fra
 	lw	$fp, ($sp)	# restore old frame pointer
 	jr	$ra
+########################################################################
+# PROCEDURE victory notification
+victory:
+	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
+	move	$fp, $sp	# frame	pointer now points to the top of the stack
+	subu	$sp, $sp, 8	# allocate 8 bytes on the stack
+	sw	$ra, -4($fp)	# store the value of the return address
+	
+	# Print a message
+	li $v0, 4
+	la $a0, victory_message
+	syscall
+	
+	# Exit
+	li $v0, 10 		# system call for exit
+	syscall      		# exit (back to operating system)
+	
+	lw	$ra, -4($fp)    # get return address from frame
+	move	$sp, $fp        # get old frame pointer from current fra
+	lw	$fp, ($sp)	# restore old frame pointer
+	jr	$ra
+	
+
