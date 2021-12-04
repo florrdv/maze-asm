@@ -1,9 +1,17 @@
-	.data
+########################################
+# Maze game by Flor Ronsmans De Vry    #
+########################################
+# ! THIS PROJECT USES WASD CONTROLS    #
+########################################
+
+.data
 file: .asciiz "maze.txt"
 buffer: .space 1024 
 
 # Maze info
 width: .word 0
+player_x: .word 0
+player_y: .word 0
 
 # Colors
 blue: .word 0xff4083f0
@@ -20,6 +28,18 @@ white: .word 0xffffffff
 main:
 	jal load_file	# Load the file
 	jal parse_file # Parse the file
+	
+game_loop:
+	# Handle input
+	jal handle_input
+	
+	# Sleep 60 ms before re-running the loop
+	li $a0, 60
+	li $v0, 32
+	syscall
+	
+	# Jump back to the start of the loop
+	j game_loop
 exit:
 	li   $v0, 10 		# system call for exit
 	syscall      		# exit (back to operating system)
@@ -142,6 +162,10 @@ parse_file:
 	j continue_after_color
 	set_yellow:
 	lw $t4, yellow
+	# Save the players location to memory
+	sw $s0, player_x
+	sw $s1, player_y
+	# Continue
 	j continue_after_color
 	set_green:
 	lw $t4, green
@@ -246,8 +270,8 @@ update_position:
 	move $s4, $v0
 	
 	# Lets store the new player position memory address in $s1
-	move $a2, $s2
-	move $a3, $s3
+	move $a0, $s2
+	move $a1, $s3
 	jal convert
 	
 	move $s5, $v0
@@ -255,18 +279,22 @@ update_position:
 	# s4 now contains our previous player position and s5 has our new position
 	# Lets make sure the position in s5 is valid to move to
 	lw $t0, black
-	lw $t1, $s5
+	lw $t1, ($s5)
 	
-	bne $t1, $s5, invalid_position
+	bne $t1, $t0, invalid_position
 	
 	# Valid position
 	valid_position:
 	lw $t2, yellow # Load yellow
-	sw $t2, $s5
-	sw $t0, $s4
+	sw $t2, ($s5)
+	sw $t0, ($s4)
 	
 	move $v0, $s2
 	move $v1, $s3	
+	
+	# Save the players location to memory
+	sw $s2, player_x
+	sw $s3, player_y
 	
 	j end_position_update
 	# Invalid position detected
@@ -277,11 +305,66 @@ update_position:
 	
 	# Cleanup
 	end_position_update:
-	lw	$s5, -16($fp)	# reset saved register $s5
-	lw	$s4, -16($fp)	# reset saved register $s4
-	lw	$s3, -16($fp)	# reset saved register $s3
+	lw	$s5, -28($fp)	# reset saved register $s5
+	lw	$s4, -24($fp)	# reset saved register $s4
+	lw	$s3, -20($fp)	# reset saved register $s3
 	lw	$s2, -16($fp)	# reset saved register $s2	
 	lw	$s1, -12($fp)	# reset saved register $s1	
+	lw	$s0, -8($fp)	# reset saved register $s0
+	lw	$ra, -4($fp)    # get return address from frame
+	move	$sp, $fp        # get old frame pointer from current fra
+	lw	$fp, ($sp)	# restore old frame pointer
+	jr	$ra
+########################################################################
+# PROCEDURE input handler
+handle_input:
+	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
+	move	$fp, $sp	# frame	pointer now points to the top of the stack
+	subu	$sp, $sp, 16	# allocate 12 bytes on the stack
+	sw	$ra, -4($fp)	# store the value of the return address
+	sw	$s0, -8($fp)	# save locally used registers
+	sw	$s1, -12($fp)	# save locally used registers
+	
+	# Check if input is available
+	lw $t0, 0xffff0000
+	beqz $t0, exit_handle_input
+	
+	# Load the current coordinates
+	lw $s0, player_x
+	lw $s1, player_y
+	
+	# Prep for a later function call
+	move $a0, $s0
+	move $a1, $s1
+	
+	# Get the most recent character
+	lw $t0, 0xffff0004
+	beq $t0, 119, up
+	beq $t0, 115, down
+	beq $t0, 97, left
+	beq $t0, 100, right
+	beq $t0, 120, exit
+	
+	up:
+	subi $s1, $s1, 1
+	j continue_handle_input
+	down:
+	addi $s1, $s1, 1
+	j continue_handle_input
+	left:
+	subi $s0, $s0, 1
+	j continue_handle_input
+	right:
+	addi $s0, $s0, 1
+	
+	continue_handle_input:
+	move $a2, $s0
+	move $a3, $s1
+	jal update_position
+	
+	exit_handle_input:
+	# Cleanup
+	lw	$s1, -12($fp)	# reset saved register $s1
 	lw	$s0, -8($fp)	# reset saved register $s0
 	lw	$ra, -4($fp)    # get return address from frame
 	move	$sp, $fp        # get old frame pointer from current fra
