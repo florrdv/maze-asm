@@ -12,8 +12,6 @@ victory_message: .asciiz "Congratulations, you won!"
 
 # Maze info
 width: .word 0
-player_x: .word 0
-player_y: .word 0
 
 # Colors
 blue: .word 0xff4083f0
@@ -27,12 +25,23 @@ white: .word 0xffffffff
 .text
 # Starting Point
 main:
+	# Well store the player coordinates in s0 and s1
 	jal load_file	# Load the file
 	jal parse_file # Parse the file
 	
+	# Update the player coordinates
+	move $s0, $v0
+	move $s1, $v1
+	
 game_loop:
 	# Handle input
-	jal handle_input
+	move $a0, $s0 # Pass player x
+	move $a1, $s1 # Pass player y
+	jal handle_input # Handle input
+	
+	# Update player coordinates
+	move $s0, $v0
+	move $s1, $v1
 	
 	# Sleep 60 ms before re-running the loop
 	li $a0, 60
@@ -86,15 +95,19 @@ load_file:
 parse_file:
 	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 20	# allocate 20 bytes on the stack
+	subu	$sp, $sp, 28	# allocate 20 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
 	sw	$s0, -8($fp)	# save locally used registers
 	sw	$s1, -12($fp)	# save locally used registers	
-	sw	$s2, -16($fp)	# save locally used registers		
+	sw	$s2, -16($fp)	# save locally used registers	
+	sw	$s3, -20($fp)	# save locally used registers
+	sw	$s4, -24($fp)	# save locally used registers	
 	
 	move $s0, $zero # Load zero into both registers, x
 	move $s1, $zero # Load zero into both registers, y
 	move $s2, $zero # Width
+	move $s3, $zero # Player x
+	move $s4, $zero # Player y
 	
 	# Determine the width
 	width_loop:
@@ -102,9 +115,10 @@ parse_file:
 	la $t0, buffer
 	# Add the offset to the buffer address
 	add $t0, $t0, $s0
+	# Load the byte
 	lb $t2, ($t0)
 	
-	# We're done here
+	# Branch if weve reached the end of a line
 	beq $t2, 10, after_width
 	
 	# Increment the count
@@ -114,9 +128,11 @@ parse_file:
 	j width_loop
 	
 	after_width:
+	# Save the row width
 	move $s2, $s0
 	sw $s2, width
 	
+	# Reset the registers
 	move $s0, $zero
 	move $s1, $zero
 	
@@ -129,9 +145,12 @@ parse_file:
 	add $t1, $t1, $s1 # Add the row index (newlines)
 	# Add the offset to the buffer address
 	add $t0, $t0, $t1
+	# Load the byte
 	lb $t2, ($t0)
 	
+	# Stop when we reach a zero byte
 	beq $t2, 0, continue
+	# Go to the next line when we reach a newline character
 	beq $t2, 10, next_line
 	
 	# Convert the coordinate to a memory address
@@ -160,9 +179,9 @@ parse_file:
 	j continue_after_color
 	set_yellow:
 	lw $t4, yellow
-	# Save the players location to memory
-	sw $s0, player_x
-	sw $s1, player_y
+	# Save the players location to the appropriate registers
+	move $s3,  $s0
+	move $s4,  $s1
 	# Continue
 	j continue_after_color
 	set_green:
@@ -191,7 +210,12 @@ parse_file:
 		
 	# Loop end	
 	continue:
+	# Return player coordinates
+	move $v0, $s3
+	move $v1, $s4
 	
+	lw	$s4, -24($fp)	# reset saved register $s4
+	lw	$s3, -20($fp)	# reset saved register $s3
 	lw	$s2, -16($fp)	# reset saved register $s2	
 	lw	$s1, -12($fp)	# reset saved register $s1	
 	lw	$s0, -8($fp)	# reset saved register $s0
@@ -289,19 +313,17 @@ update_position:
 	# Valid position
 	valid_position:
 	lw $t2, yellow # Load yellow
-	sw $t2, ($s5)
-	sw $t0, ($s4)
+	sw $t2, ($s5) # Set to yellow
+	sw $t0, ($s4) # Set to black
 	
+	# Place new coordinates in return registers
 	move $v0, $s2
 	move $v1, $s3	
-	
-	# Save the players location to memory
-	sw $s2, player_x
-	sw $s3, player_y
 	
 	j end_position_update
 	# Invalid position detected
 	invalid_position:
+	# Place the initial coordinates in the return registers
 	move $v0, $s0
 	move $v1, $s1
 	j end_position_update
@@ -328,13 +350,18 @@ handle_input:
 	sw	$s0, -8($fp)	# save locally used registers
 	sw	$s1, -12($fp)	# save locally used registers
 	
+	# Well pass the player coordinates as arguments
+	move $s0, $a0
+	move $s1, $a1
+	
+	# Lets set the return registers already so we have a fallback
+	# return value in case input is unavailable
+	move $v0, $s0
+	move $v1, $s1
+	
 	# Check if input is available
 	lw $t0, 0xffff0000
 	beqz $t0, exit_handle_input
-	
-	# Load the current coordinates
-	lw $s0, player_x
-	lw $s1, player_y
 	
 	# Prep for a later function call
 	move $a0, $s0
@@ -363,6 +390,9 @@ handle_input:
 	move $a2, $s0
 	move $a3, $s1
 	jal update_position
+	
+	# Return valus will already be in their appropriate registers
+	# No need to copy them again
 	
 	exit_handle_input:
 	# Cleanup
