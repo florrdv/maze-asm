@@ -336,15 +336,89 @@ update_position:
 dfs:
 	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 8	# allocate 8 bytes on the stack
+	subu	$sp, $sp, 28	# allocate 8 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
+	sw	$s0, -8($fp)	# save locally used registers
+	sw	$s1, -12($fp)	# save locally used registers
+	sw	$s2, -16($fp)	# save locally used registers
+	sw	$s3, -20($fp)	# save locally used registers
+	sw	$s4, -24($fp)	# save locally used registers
 	
-	jal is_victory
-	bnez $v0, victory
+	move $s0, $a0 # Player x
+	move $s1, $a1 # Player y
+	move $s2, $a3 # Visited array
 	
+	move $s3, $s0 # New player x
+	move $s4, $s1 # New player y
+	
+	addi $s3, -1 # Set offset
+		
+	
+	
+	lw	$s4, -24($fp)	# reset saved register $s1
+	lw	$s3, -20($fp)	# reset saved register $s1
+	lw	$s2, -16($fp)	# reset saved register $s1
+	lw	$s1, -12($fp)	# reset saved register $s1	
+	lw	$s0, -8($fp)	# reset saved register $s0
 	lw	$ra, -4($fp)    # get return address from frame
 	move	$sp, $fp        # get old frame pointer from current fra
 	lw	$fp, ($sp)	# restore old frame pointer
+	jr	$ra
+
+push_visited:
+	sw	$fp, 0($sp)		# push old frame pointer (dynamic link)
+	move	$fp, $sp		# frame	pointer now points to the top of the stack
+	subu	$sp, $sp, 8		# allocate 8 bytes on the stack
+	sw	$ra, -4($fp)		# store the value of the return address
+	sw	$s0, -8($fp)		# save locally used registers
+	
+	move $s0, $a0 			# Initialize the array pointer
+	
+	push_visited_loop:
+	lw $t0, $s0 			# Load the value 
+	beqz $t0, push_visited_set 	# Stop if its zero
+	
+	addi, $s0, 4 			# Increment the address
+	j push_visited_loop 		# Loop again
+	
+	push_visited_set:
+	sw $a1, $s0       		# Store the item
+	
+	lw	$s0, -8($fp)		# reset saved register $s0
+	lw	$ra, -4($fp)    	# get return address from frame
+	move	$sp, $fp        	# get old frame pointer from current fra
+	lw	$fp, ($sp)		# restore old frame pointer
+	jr	$ra
+
+is_visited:
+	sw	$fp, 0($sp)		# push old frame pointer (dynamic link)
+	move	$fp, $sp		# frame	pointer now points to the top of the stack
+	subu	$sp, $sp, 8		# allocate 8 bytes on the stack
+	sw	$ra, -4($fp)		# store the value of the return address
+	sw	$s0, -8($fp)		# save locally used registers
+	
+	move $s0, $a0 			# Initialize the array pointer
+	li $v0, 0 			# Initialize return value
+	
+	is_visited_loop:
+	lw $t0, $s0 			# Load the value 
+	beqz $t0, is_visited_end 	# Stop if its zero
+	
+	bne $s0, $a1, is_visited_not_equal
+	li $v0, 1
+	j is_visited_end
+	
+	is_visited_not_equal:
+	
+	addi, $s0, 4 			# Increment the address
+	j is_visited_loop 		# Loop again
+	
+	is_visited_end:
+	
+	lw	$s0, -8($fp)		# reset saved register $s0
+	lw	$ra, -4($fp)    	# get return address from frame
+	move	$sp, $fp        	# get old frame pointer from current fra
+	lw	$fp, ($sp)		# restore old frame pointer
 	jr	$ra
 
 ########################################################################
