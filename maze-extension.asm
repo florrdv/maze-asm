@@ -15,6 +15,7 @@ width: .word 0
 
 .align 2
 visited: .space 4096
+visited_local: .space 4096
 
 # Colors
 blue: .word 0xff4083f0
@@ -357,6 +358,9 @@ dfs:
 	addi $s2, $s2, -1 	# Set offset
 	
 	move $s4, $zero
+	move $s5, $zero
+	
+	move $s6, $a2 # Visited
 	
 	# START LOOP
 	dfs_loop:
