@@ -15,7 +15,6 @@ width: .word 0
 
 .align 2
 visited: .space 4096
-visited_local: .space 4096
 
 # Colors
 blue: .word 0xff4083f0
@@ -443,13 +442,6 @@ dfs:
 	move	$sp, $fp        # get old frame pointer from current fra
 	lw	$fp, ($sp)	# restore old frame pointer
 	jr	$ra
-	
-new_array_from:
-	sw	$fp, 0($sp)		# push old frame pointer (dynamic link)
-	move	$fp, $sp		# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 12		# allocate 8 bytes on the stack
-	sw	$ra, -4($fp)		# store the value of the return address
-	sw	$s0, -8($fp)		# save locally used registers
 
 push_visited:
 	sw	$fp, 0($sp)		# push old frame pointer (dynamic link)
@@ -501,43 +493,6 @@ is_visited:
 	
 	is_visited_end:
 	
-	lw	$s0, -8($fp)		# reset saved register $s0
-	lw	$ra, -4($fp)    	# get return address from frame
-	move	$sp, $fp        	# get old frame pointer from current fra
-	lw	$fp, ($sp)		# restore old frame pointer
-	jr	$ra
-
-restore_visited_local:
-	sw	$fp, 0($sp)		# push old frame pointer (dynamic link)
-	move	$fp, $sp		# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 16		# allocate 8 bytes on the stack
-	sw	$ra, -4($fp)		# store the value of the return address
-	sw	$s0, -8($fp)		# save locally used registers
-	sw	$s1, -12($fp)		# save locally used registers
-		
-	la $s0, visited 		# Initialize the array pointer
-	la $s1, visited_local		# Set local array start pointer
-	
-	restore_visited_loop:
-	lw $t0, ($s0) 				# Load the value 
-	beqz $t0, restore_visited_local_end 	# Stop if its zero
-	
-	# Get offset
-	la $t1, visited
-	sub $t1, $s1, $t1
-	
-	# Get corresponding visited_local value
-	add $t1, $t1, $s1
-	
-	sw $t0, ($t1)
-	
-	addi $s0, $s0, 4 			# Increment the address
-	j restore_visited_loop		# Loop again
-	
-	restore_visited_local_end:
-	sw $a0, ($s0)       		# Store the item
-	
-	lw	$s1, -12($fp)		# reset saved register $s0
 	lw	$s0, -8($fp)		# reset saved register $s0
 	lw	$ra, -4($fp)    	# get return address from frame
 	move	$sp, $fp        	# get old frame pointer from current fra
