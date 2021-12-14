@@ -339,7 +339,8 @@ dfs:
 	subu	$sp, $sp, 8	# allocate 8 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
 	
-	
+	jal is_victory
+	bnez $v0, victory
 	
 	lw	$ra, -4($fp)    # get return address from frame
 	move	$sp, $fp        # get old frame pointer from current fra
