@@ -50,6 +50,10 @@ main:
 	li $a0, 10
 	jal is_visited
 	
+	li $a0, 7
+	li $a1, 4
+	jal is_victory
+	
 	
 	# Exit
 	li $v0, 10 			# Load 10 which refers to clean exit
@@ -391,7 +395,7 @@ push_visited:
 	lw $t0, ($s0) 			# Load the value 
 	beqz $t0, push_visited_set 	# Stop if its zero
 	
-	addi $s0, $s0, 4 			# Increment the address
+	addi $s0, $s0, 4 		# Increment the address
 	j push_visited_loop 		# Loop again
 	
 	push_visited_set:
