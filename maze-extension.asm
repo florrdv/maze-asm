@@ -362,12 +362,7 @@ dfs:
 	# START LOOP
 	dfs_loop:
 	bge $s4, 4, dfs_end
-	
-	# Sleep 100ms
-	li $a0, 100
-	li $v0, 32
-	syscall
-	
+		
 	# Check if the location has been visited yet
 	move $a0, $s2 		# Move new location x
 	move $a1, $s3 		# Move new location y
@@ -391,7 +386,13 @@ dfs:
 	bne $v0, $s2, dfs_location_update # Check if x matches
 	bne $v1, $s3, dfs_location_update # Check if y matches
 	
-	# Player moved, prepare to call dfs recursively
+	# Player moved, sleep first
+	# Sleep 100ms
+	li $a0, 100
+	li $v0, 32
+	syscall
+	
+	# Prepare to call dfs recursively
 	move $a0, $s5
 	jal push_visited
 	
@@ -407,6 +408,13 @@ dfs:
 	move $a2, $s0 # Load new_x
 	move $a3, $s1 # Load new_y
 	jal update_position # Attempt to opdate the users position
+	
+	# Sleep 100ms
+	li $a0, 100
+	li $v0, 32
+	syscall
+	
+	
 	
 	dfs_loop_end:
 	addi $s4, $s4, 1
