@@ -37,23 +37,9 @@ main:
 	move $s1, $v1 			# Store player_y
 	
 	# Start DFS
-	# move $a0, $s0 			# Pass player_x 
-	# move $a1, $s1 			# Pass player_y
-	# jal dfs       			# Start procedure
-	
-	li $a0, 10
-	jal push_visited
-	
-	li $a0, 11
-	jal push_visited
-	
-	li $a0, 10
-	jal is_visited
-	
-	li $a0, 7
-	li $a1, 4
-	jal is_victory
-	
+	move $a0, $s0 			# Pass player_x 
+	move $a1, $s1 			# Pass player_y
+	jal dfs       			# Start procedure
 	
 	# Exit
 	li $v0, 10 			# Load 10 which refers to clean exit
@@ -285,8 +271,8 @@ update_position:
 	
 	# a0 contains the current player row
 	# a1 contains the current player column
-	# a0 contains the new plaeyr row
-	# a1 contains the new player column
+	# a2 contains the new player row
+	# a3 contains the new player column
 	move $s0, $a0
 	move $s1, $a1
 	move $s2, $a2
@@ -299,7 +285,7 @@ update_position:
 	
 	move $s4, $v0
 	
-	# Lets store the new player position memory address in $s1
+	# Lets store the new player position memory address in $s5
 	move $a0, $s2
 	move $a1, $s3
 	jal convert
@@ -353,25 +339,98 @@ update_position:
 dfs:
 	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 28	# allocate 8 bytes on the stack
+	subu	$sp, $sp, 32	# allocate 8 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
 	sw	$s0, -8($fp)	# save locally used registers
 	sw	$s1, -12($fp)	# save locally used registers
 	sw	$s2, -16($fp)	# save locally used registers
 	sw	$s3, -20($fp)	# save locally used registers
 	sw	$s4, -24($fp)	# save locally used registers
+	sw	$s5, -28($fp)	# save locally used registers
+			
+	move $s0, $a0 		# Player x
+	move $s1, $a1 		# Player y
 	
-	move $s0, $a0 # Player x
-	move $s1, $a1 # Player y
-	move $s2, $a3 # Visited array
+	move $s2, $s0 		# New player x
+	move $s3, $s1 		# New player y
 	
-	move $s3, $s0 # New player x
-	move $s4, $s1 # New player y
+	addi $s2, $s2, -1 	# Set offset
 	
-	addi $s3, $s3, -1 # Set offset
-		
+	move $s4, $zero
 	
+	# START LOOP
+	dfs_loop:
+	bge $s4, 4, dfs_end
 	
+	# Check if the location has been visited yet
+	move $a0, $s2 		# Move new location x
+	move $a0, $s3 		# Move new location y
+	jal convert 		# Convert
+	
+	move $s5, $v0
+	move $a0, $s5 		# Load memory address
+	jal is_visited 		# Check if visited
+	
+	bnez $v0, dfs_loop_end 	# Continue if already visited
+	
+	# Update position
+	move $a0, $s0 # Load old_x
+	move $a1, $s1 # Load old_y
+	
+	move $a2, $s2 # Load new_x
+	move $a3, $s3 # Load new_y
+	jal update_position # Attempt to opdate the users position
+	
+	bne $v0, $s2, dfs_location_update # Check if x matches
+	bne $v1, $s3, dfs_location_update # Check if y matches
+	
+	# Player moved, prepare to call dfs recursively
+	move $a0, $s5
+	jal push_visited
+	
+	# Call dfs recursively
+	move $a0, $s2
+	move $a1, $s3
+	jal dfs
+	
+	dfs_location_update:
+	move $a0, $s0 # Load old_x
+	move $a1, $s1 # Load old_y
+	
+	move $a2, $s2 # Load new_x
+	move $a3, $s3 # Load new_y
+	jal update_position # Attempt to opdate the users position
+	
+	dfs_loop_end:
+	addi $s4, $s4, 1
+	# (-1, 0), (1, 0), (0, -1), (0, 1)
+	
+	beq $s4, 1, dfs_one
+	beq $s4, 2, dfs_two
+	beq $s4, 3, dfs_three
+	
+	dfs_one:
+	move $s2, $s0 # Reset player x
+	move $s3, $s1 # Reset player y
+	
+	addi $s2, $s2, 1
+	j dfs_loop
+	dfs_two:
+	move $s2, $s0 # Reset player x
+	move $s3, $s1 # Reset player y
+	
+	addi $s3, $s3, -1
+	j dfs_loop
+	dfs_three:
+	move $s2, $s0 # Reset player x
+	move $s3, $s1 # Reset player y
+	
+	addi $s3, $s3, 1
+	j dfs_loop
+	
+	dfs_end:
+	lw	$s5, -32($fp)	# reset saved register $s1
+	lw	$s4, -28($fp)	# reset saved register $s1
 	lw	$s4, -24($fp)	# reset saved register $s1
 	lw	$s3, -20($fp)	# reset saved register $s1
 	lw	$s2, -16($fp)	# reset saved register $s1
