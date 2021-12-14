@@ -363,6 +363,11 @@ dfs:
 	dfs_loop:
 	bge $s4, 4, dfs_end
 	
+	# Sleep 100ms
+	li $a0, 100
+	li $v0, 32
+	syscall
+	
 	# Check if the location has been visited yet
 	move $a0, $s2 		# Move new location x
 	move $a1, $s3 		# Move new location y
