@@ -396,11 +396,11 @@ dfs:
 	jal dfs
 	
 	dfs_location_update:
-	move $a0, $s0 # Load old_x
-	move $a1, $s1 # Load old_y
+	move $a0, $s2 # Load old_x
+	move $a1, $s3 # Load old_y
 	
-	move $a2, $s2 # Load new_x
-	move $a3, $s3 # Load new_y
+	move $a2, $s0 # Load new_x
+	move $a3, $s1 # Load new_y
 	jal update_position # Attempt to opdate the users position
 	
 	dfs_loop_end:
