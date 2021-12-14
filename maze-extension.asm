@@ -13,6 +13,9 @@ victory_message: .asciiz "Congratulations, you won!"
 # Maze info
 width: .word 0
 
+.align 2
+visited: .space 4096
+
 # Colors
 blue: .word 0xff4083f0
 black: .word 0xff000000
@@ -34,9 +37,19 @@ main:
 	move $s1, $v1 			# Store player_y
 	
 	# Start DFS
-	move $a0, $s0 			# Pass player_x 
-	move $a1, $s1 			# Pass player_y
-	jal dfs       			# Start procedure
+	# move $a0, $s0 			# Pass player_x 
+	# move $a1, $s1 			# Pass player_y
+	# jal dfs       			# Start procedure
+	
+	li $a0, 10
+	jal push_visited
+	
+	li $a0, 11
+	jal push_visited
+	
+	li $a0, 10
+	jal is_visited
+	
 	
 	# Exit
 	li $v0, 10 			# Load 10 which refers to clean exit
@@ -351,7 +364,7 @@ dfs:
 	move $s3, $s0 # New player x
 	move $s4, $s1 # New player y
 	
-	addi $s3, -1 # Set offset
+	addi $s3, $s3, -1 # Set offset
 		
 	
 	
@@ -372,17 +385,17 @@ push_visited:
 	sw	$ra, -4($fp)		# store the value of the return address
 	sw	$s0, -8($fp)		# save locally used registers
 	
-	move $s0, $a0 			# Initialize the array pointer
+	la $s0, visited 			# Initialize the array pointer
 	
 	push_visited_loop:
-	lw $t0, $s0 			# Load the value 
+	lw $t0, ($s0) 			# Load the value 
 	beqz $t0, push_visited_set 	# Stop if its zero
 	
-	addi, $s0, 4 			# Increment the address
+	addi $s0, $s0, 4 			# Increment the address
 	j push_visited_loop 		# Loop again
 	
 	push_visited_set:
-	sw $a1, $s0       		# Store the item
+	sw $a0, ($s0)       		# Store the item
 	
 	lw	$s0, -8($fp)		# reset saved register $s0
 	lw	$ra, -4($fp)    	# get return address from frame
@@ -397,20 +410,20 @@ is_visited:
 	sw	$ra, -4($fp)		# store the value of the return address
 	sw	$s0, -8($fp)		# save locally used registers
 	
-	move $s0, $a0 			# Initialize the array pointer
+	la $s0, visited 		# Initialize the array pointer
 	li $v0, 0 			# Initialize return value
 	
 	is_visited_loop:
-	lw $t0, $s0 			# Load the value 
+	lw $t0, ($s0) 			# Load the value 
 	beqz $t0, is_visited_end 	# Stop if its zero
 	
-	bne $s0, $a1, is_visited_not_equal
+	bne $t0, $a0, is_visited_not_equal
 	li $v0, 1
 	j is_visited_end
 	
 	is_visited_not_equal:
 	
-	addi, $s0, 4 			# Increment the address
+	addi $s0, $s0, 4 		# Increment the address
 	j is_visited_loop 		# Loop again
 	
 	is_visited_end:
@@ -453,7 +466,7 @@ is_victory:
 	
 	# a0 and a1 are already set accordingly
 	jal convert 		# Convert to address
-	lw $t0, $v0 		# Load the color at coord address
+	lw $t0, ($v0) 		# Load the color at coord address
 	
 	lw $t1, green 		# Load the finish color
 	
