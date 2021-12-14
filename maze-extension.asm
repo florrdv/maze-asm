@@ -373,10 +373,8 @@ victory:
 is_victory:
 	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 16	# allocate 8 bytes on the stack
+	subu	$sp, $sp, 8	# allocate 8 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
-	sw	$s0, -8($fp)	# save locally used registers
-	sw	$s1, -12($fp)	# save locally used registers
 	
 	# a0 and a1 are already set accordingly
 	jal convert 		# Convert to address
@@ -390,8 +388,6 @@ is_victory:
 	li $v0, 1 		# Set to true as they are equal
 	
 	end_is_victory:
-	lw	$s1, -12($fp)	# reset saved register $s1	
-	lw	$s0, -8($fp)	# reset saved register $s0
 	lw	$ra, -4($fp)    # get return address from frame
 	move	$sp, $fp        # get old frame pointer from current fra
 	lw	$fp, ($sp)	# restore old frame pointer
