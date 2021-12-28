@@ -7,12 +7,12 @@ main:
 	jal set_row
 	
 loop2:
-	bgt $s1, 2048, exit
+	bgt $s1, 32, exit
 	
-	div $a0, $s1, 4
+	move $t0, $s1
 	jal set_row
 	
-	addi $s1, $s1, 4
+	addi $s1, $s1, 1
 	j loop2
 	
 exit:
@@ -20,8 +20,8 @@ exit:
 	syscall
 	
 set_row:
-	# Start = $GP + ROW INDEX * 4096
-	sll $t0, $a0, 11
+	# Start = $GP + ROW INDEX * (32*4)
+	sll $t0, $t0, 7
 	add $t0, $gp, $t0
 
 	# Start pointer is stored in $t0
@@ -30,7 +30,7 @@ set_row:
 	
 	# Start the loop	
 loop:
-	bgt $t1, 2048, continue
+	bgt $t1, 128, continue
 	
 	# X coordinate in a0
 	# Y coordinate in a1
