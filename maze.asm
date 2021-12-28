@@ -12,6 +12,8 @@ victory_message: .asciiz "Congratulations, you won!"
 
 # Maze info
 width: .word 0
+exit: .word 0
+candies_left: .word 0
 
 # Colors
 blue: .word 0xff4083f0
@@ -95,19 +97,24 @@ load_file:
 parse_file:
 	sw	$fp, 0($sp)	# push old frame pointer (dynamic link)
 	move	$fp, $sp	# frame	pointer now points to the top of the stack
-	subu	$sp, $sp, 28	# allocate 20 bytes on the stack
+	subu	$sp, $sp, 36	# allocate 20 bytes on the stack
 	sw	$ra, -4($fp)	# store the value of the return address
 	sw	$s0, -8($fp)	# save locally used registers
 	sw	$s1, -12($fp)	# save locally used registers	
 	sw	$s2, -16($fp)	# save locally used registers	
 	sw	$s3, -20($fp)	# save locally used registers
 	sw	$s4, -24($fp)	# save locally used registers	
+	sw	$s5, -28($fp)	# save locally used registers
+	sw	$s6, -32($fp)	# save locally used registers
 	
 	move $s0, $zero # Load zero into both registers, x
 	move $s1, $zero # Load zero into both registers, y
 	move $s2, $zero # Width
 	move $s3, $zero # Player x
 	move $s4, $zero # Player y
+	
+	move $s5, $zero # Exit address
+	move $s6, $zero # Candy amount
 	
 	# Determine the width
 	width_loop:
@@ -185,13 +192,19 @@ parse_file:
 	# Continue
 	j continue_after_color
 	set_green:
-	lw $t4, green
+	lw $t4, black # We ll set it once we ve confirmed that there are no candies
+	
+	move $s5, $t3 # Save the exit location
+	
 	j continue_after_color
 	set_red:
 	lw $t4, red
 	j continue_after_color
 	set_white:
 	lw $t4, white
+	
+	addi $s6, $s6, 1 # Increment candy count by one
+	
 	j continue_after_color
 	
 	continue_after_color:
@@ -210,10 +223,25 @@ parse_file:
 		
 	# Loop end	
 	continue:
+	
+	sw $s5, exit
+	sw $s6, candies_left
+	
+	# Check if there were any candies
+	bne $s6, $zero, parse_file_end
+	
+	# There were candies, hide the exit
+	lw $t0, green
+	sw $t0, ($s5)
+	
+	parse_file_end:
+	
 	# Return player coordinates
 	move $v0, $s3
 	move $v1, $s4
 	
+	lw	$s6, -32($fp)	# reset saved register $s4
+	lw	$s5, -28($fp)	# reset saved register $s4
 	lw	$s4, -24($fp)	# reset saved register $s4
 	lw	$s3, -20($fp)	# reset saved register $s3
 	lw	$s2, -16($fp)	# reset saved register $s2	
@@ -304,10 +332,14 @@ update_position:
 	lw $t1, ($s5)
 	beq $t1, $t0, victory
 	
+	# Lets check if our player is attempting to collect candy
+	lw $t0, white
+	beq $t1, $t0, candy
+	
+	
 	
 	# Lets make sure the position in s5 is valid to move to
 	lw $t0, black
-	
 	bne $t1, $t0, invalid_position
 	
 	# Valid position
@@ -327,6 +359,29 @@ update_position:
 	move $v0, $s0
 	move $v1, $s1
 	j end_position_update
+	
+	candy:
+	lw $t0, black
+	lw $t2, yellow # Load yellow
+	sw $t2, ($s5) # Set to yellow
+	sw $t0, ($s4) # Set to black
+	
+	lw $t0, candies_left
+	addi $t0, $t0, -1
+	sw $t0, candies_left
+	
+	# Place new coordinates in return registers
+	move $v0, $s2
+	move $v1, $s3
+	
+	beqz $t0, candy_quest_done
+	
+	j end_position_update
+	
+	candy_quest_done:
+	lw $t0, exit
+	lw $t1, green
+	sw $t1, ($t0)
 	
 	# Cleanup
 	end_position_update:
