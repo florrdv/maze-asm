@@ -8,3 +8,6 @@ Contents:
 - `read-file.asm` MIPS: Building your Projects’ Building Blocks (4)
 - `maze.asm` MIPS: Putting your Project Together + MIPS: Extending your Project (2)
 - `maze-extension.asm` MIPS: Extending your Project (1)
+
+Notes:
+- Maze.asm includes the version of the maze which also supports candies
