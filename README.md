@@ -9,5 +9,8 @@ Contents:
 - `maze.asm` MIPS: Putting your Project Together + MIPS: Extending your Project (2)
 - `maze_extension.asm` MIPS: Extending your Project (1)
 
+- `demo-base.mp4` Base game demo (including candies)
+- `demo-extension.mp4` Extended game demo (automated)
+
 Notes:
 - Maze.asm includes the version of the maze which also supports candies
