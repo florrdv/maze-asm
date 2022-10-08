@@ -6,12 +6,16 @@
 
 ___
 
+## Project description
+The goal for this project was to develop a maze game with a customizable layout in assembly which incorporates a pathfinding algorithm for automated solving.
+
 ## Technologies used
 - MIPS assembly language
 - [MARS (MIPS Assembler and Runtime Simulator)](http://courses.missouristate.edu/kenvollmar/mars/)
 
 ## Project overview
-- `maze.asm`: final version of the project
+- `maze.asm`: final version of the base game
+- `maze-auto.asm`: final version of the project including pathfinding algorithm
 - `resources/coord-address.asm` program to convert coordinates to memory addresses 
 - `resources/red-bitmap.asm` program to show red bitmap through memory-mapped I/O 
 - `resources/keyboard-listener.asm` program to listen for memory-mapped input
