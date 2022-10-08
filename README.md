@@ -9,6 +9,14 @@ ___
 ## Project description
 The goal for this project was to develop a maze game with a customizable layout in assembly which incorporates a pathfinding algorithm for automated solving.
 
+## Goals
+- Player movement using memory-mapped I/O
+- State display using memory-mapped I/O
+- Loading of custom layouts from a file
+- Pathfinding algorithm to automatically solve the maze
+- Implementation of 'candy' objects, which should be collected before the exit is shown 
+- Detect when player finishes level
+
 ## Technologies used
 - MIPS assembly language
 - [MARS (MIPS Assembler and Runtime Simulator)](http://courses.missouristate.edu/kenvollmar/mars/)
