@@ -20,6 +20,7 @@ The goal for this project was to develop a maze game with a customizable layout 
 ## Technologies used
 - MIPS assembly language
 - [MARS (MIPS Assembler and Runtime Simulator)](http://courses.missouristate.edu/kenvollmar/mars/)
+- Memory-mapped I/O
 
 ## Project overview
 - `maze.asm`: final version of the base game
